@@ -1,0 +1,76 @@
+
+#----------------------------------------------
+# Filename: Flip_dosages_TWINGENE.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 15JAN2013
+# Updated: 
+# Purpose: Flip the dosages and assign the right allele according to literature. It works for TWINGENE.
+#          Save final dataset with SNPs dosages now flipped (1 SNP per column). Also save low_imp_f that need to be use by ULSAM and GOSH
+# Note: 
+#-----------------------------------------------
+# Data used: snplist.txt, final_TWINGENE.txt,  twge.+.qced.b36.imp.fam low_imp.txt
+# Data created: final_TWINGENE_flp.txt low_imp_f
+#-----------------------------------------------
+# OP: R 2.12.1
+#-----------------------------------------------*/
+
+
+imp <- data.frame(read.table("final_TWINGENE.txt",header=F,stringsAsFactor=F))
+imp <- imp[order(imp$V2),]
+low_imp <- read.table("Data/low_imp.txt", header=F)
+
+all <- read.table("Data/snplist.txt", header=F)
+
+# Add missing variable
+imp <- rbind(imp,c("---","rs247617",55548217,"A","C",rep(0,length(imp)-5)))
+
+all <- all[order(all$V2),]
+imp <- imp[order(imp$V2),]
+
+
+setdiff(as.character(imp$V2), as.character(all$V2))
+setdiff(as.character(all$V2), as.character(imp$V2))
+
+
+#check all and imp have acceptable alleles
+check3 <- ifelse(as.character(all$V3)==as.character(imp$V5) | as.character(all$V3)==as.character(imp$V4),1,0)
+
+
+wh <- NULL
+for (i in seq(6,length(imp),3)){
+	subj <- NULL
+	for (j in 1:nrow(imp)){
+		temp<-t(imp[j,i:(i+2)])	
+		temp2 <- as.numeric(temp[1])*0+as.numeric(temp[2])*1+as.numeric(temp[3])*2
+		subj <- c(subj,temp2)}
+	wh <- rbind(wh,subj)
+	colnames(wh) <- paste(imp[,2],"_",imp[,5],sep="")}
+
+
+wh_d <- data.frame(wh)
+wh_flp <- wh_d
+for (i in 1:length(wh_d)){
+	if (as.character(all$V3[i])!=as.character(imp[i,5])) 
+        	{wh_flp[,i]<- (2-wh_d[,i])
+        	colnames(wh_flp)[i] <- paste(imp[i,2],"_",as.character(all$V3[i]),sep="")}
+        else{wh_flp[,i] <- wh_d[,i]
+	    colnames(wh_flp)[i] <- colnames(wh_d)[i]}
+}
+
+impo <- NULL
+for (k in 1:length(wh_flp)){
+	if(strsplit(colnames(wh_flp)[k],"_")[[1]][1] %in% low_imp$V1) {impo <- rbind(impo,cbind(strsplit(colnames(wh_flp)[k],"_")[[1]][1],mean(wh_flp[,k])))}}
+
+write.table(impo,"Data/low_imp_f.txt", col.names=F,row.names=F,quote=F)
+
+## Attach .fam
+fam <- read.table("Data/twge.+.qced.b36.imp.fam", header=F)
+
+## Give subjects ID to wh_flp
+def <- cbind(fam$V2,wh_flp)
+colnames(def)[1] <- "GWAS_ID"
+
+
+##WRITE FINAL FILE FLIPPED
+write.table(def,"final_TWINGENE_flp.txt",quote=F, col.names=T, row.names=F)

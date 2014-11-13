@@ -1,0 +1,82 @@
+#!/bin/bash
+
+#----------------------------------------------
+# Filename: grep_dosages_ULSAM_imp.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 14JAN2012
+# Updated:
+# Purpose: Grep the SNPs specified in snplist.txt from the ulsam dosages files 
+# Note: 
+#-----------------------------------------------
+# Data used: snplist.txt ULSAM_dosages_files
+# Data created: final_ULSAM.txt, temporary files
+#-----------------------------------------------
+# OP: 
+#-----------------------------------------------*/
+
+
+for i in `seq 1 22` ; do
+i2=`printf %02d $i`
+
+gunzip -c /projects/CVD/ulsam.gwas/ulsam.imp.hapmap.b36/ULSAMb36_$i2.imputed.gz > /projects/CVD/Temp/ULSAMb36_$i2.imp
+
+
+done
+
+
+## In R
+
+converter <- read.table("Data/Id_position_b36_hg18_SNP130",header=F, stringsAsFactor=F)
+snplist <- read.table("Data/snplist.txt", stringsAsFactor=F)
+
+converter_snplist <- converter[converter[,4]%in%snplist[,2],]
+
+setdiff(as.character(snplist$V2),as.character(converter_snplist$V4))
+setdiff(as.character(converter_snplist$V4),as.character(snplist$V2))
+
+# rs7422339 and rs8192289 are not there
+
+for (i in 1:22)
+{
+converter_snplistC <- converter_snplist[as.numeric(substr(converter_snplist[,1],4,nchar(converter_snplist[,1])))==i,]
+converter_snplistCNA <- converter_snplistC[!is.na(converter_snplistC[,1]),]
+
+j <- formatC(i, width=2, flag="0")
+dosage <- read.table(paste("/projects/CVD/Temp/ULSAMb36_",j,".imp", sep=""), header=F)
+
+dosage_snp <- dosage[dosage[,3]%in%converter_snplistCNA[,3],]
+
+write.table(dosage_snp,file=paste("Temp/ulsam_imp/chr",j,".txt",sep=""),col.names=F, row.names=F, quote=F)
+print(j)
+print(nrow(converter_snplistCNA))
+print(nrow(dosage_snp))
+
+}
+
+
+## In Unix
+cat Temp/ulsam_imp/chr* > final_ULSAM_imp.txt
+
+## In R again
+imp <- data.frame(read.table("final_ULSAM_imp.txt",header=F,stringsAsFactor=F))
+
+converter <- read.table("Data/Id_position_b36_hg18_SNP130",header=F, stringsAsFactor=F)
+snplist <- read.table("Data/snplist.txt", stringsAsFactor=F)
+
+converter_snplist <- converter[converter[,4]%in%snplist[,2],]
+
+# Delete missing
+converter_snplistNA<- converter_snplist[!is.na(converter_snplist[,1]),]
+
+# Delete strange cur
+converter_snplistNAS<- converter_snplistNA[converter_snplistNA[,1]!="chr6_cox_hap1" & converter_snplistNA[,1]!="chr6_qbl_hap2",]
+
+
+convme <- merge(converter_snplistNAS, imp,  by.x="V3", by.y="V3")
+convme$SNP <- ifelse(convme[,4]==convme[,7],convme[,7],convme[,4])
+
+# Save Final
+fin <- cbind(convme[,6],convme$SNP,convme[,1],convme[,8:(ncol(convme)-1)])
+
+write.table(fin,file="final_ULSAM_imp_fin.txt",col.names=F, row.names=F, quote=F)

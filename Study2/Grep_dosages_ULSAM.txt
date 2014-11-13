@@ -1,0 +1,97 @@
+#!/bin/bash
+
+#----------------------------------------------
+# Filename: grep_dosages_ULSAM.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 14JAN2012
+# Updated:
+# Purpose: Grep the SNPs specified in snplist.txt from the ulsam dosages files 
+# Note: 
+#-----------------------------------------------
+# Data used: snplist.txt ULSAM_dosages_files
+# Data created: final_ULSAM.txt, temporary files
+#-----------------------------------------------
+# OP: 
+#-----------------------------------------------*/
+
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr01.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr01.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr02.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr02.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr03.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr03.ceu.p2.r22.int3M.controls.imp
+
+ 7za x /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr04.ceu.p2.r22.int5M.controls.zip -o/projects/CVD/Temp/
+
+ 7za x /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr05.ceu.p2.r22.int5M.controls.zip -o/projects/CVD/Temp/
+
+gunzip -c /projects/CVD/Temp/impute1d.ulsam.+.qced.chr04.ceu.p2.r22.int5M.controls.imp.gz > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr04.ceu.p2.r22.int5M.controls.imp
+
+gunzip -c /projects/CVD/Temp/impute1d.ulsam.+.qced.chr05.ceu.p2.r22.int5M.controls.imp.gz > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr05.ceu.p2.r22.int5M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr03.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr03.ceu.p2.r22.int3M.controls.imp
+
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr06.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr06.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr07.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr07.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr08.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr08.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr09.ceu.p2.r22.int5M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr09.ceu.p2.r22.int5M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr10.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr10.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr11.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr11.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr12.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr12.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr13.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr13.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr14.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr14.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr15.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr15.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr16.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr16.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr17.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr17.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr18.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr18.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr19.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr19.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr20.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr20.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr21.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr21.ceu.p2.r22.int3M.controls.imp
+
+gunzip -S .zip -c /projects/CVD/ulsam.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.ulsam.+.qced.chr22.ceu.p2.r22.int3M.controls.zip > /projects/CVD/Temp/impute1d.ulsam.+.qced.chr22.ceu.p2.r22.int3M.controls.imp
+
+
+snplist=Data/snplist.txt
+
+for chr in `seq 1 22` ; do
+
+ chr1=`printf %02d $chr`
+ grep -w chr${chr} ${snplist} | awk '{print $2}' > Temp/ulsam/rs
+
+ dosage=/projects/CVD/Temp/impute1d.ulsam.+.qced.chr${chr1}.ceu.p2.r22.int3M.controls.imp
+ 
+ awk '{ print $2 }' ${dosage} > Temp/ulsam/rs_d
+
+ grep -n -x -f Temp/ulsam/rs Temp/ulsam/rs_d | cut -d":" -f1 > Temp/ulsam/rows
+
+ awk '{ print $1"p" }' Temp/ulsam/rows > Temp/ulsam/rowsp
+ tr "\n" ";" < Temp/ulsam/rowsp > Temp/ulsam/rowsps
+ sed -n "`cat Temp/ulsam/rowsps`" ${dosage} > Temp/ulsam/chr${chr1}
+ 
+
+done
+
+cat Temp/ulsam/chr* > final_ULSAM.txt
+
+
+
+
+
+

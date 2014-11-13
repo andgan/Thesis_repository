@@ -1,0 +1,80 @@
+
+#----------------------------------------------
+# Filename: Flip_dosages_ULSAM.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 15JAN2013
+# Updated: 
+# Purpose: Flip the dosages and assign the right allele according to litterature. It works for ULSAM.
+#          Save final dataset with SNPs dosages now flipped (1 SNP per column).
+# Note: Ulsam has 2 less SNPs then TWINGENE. First run Flip_dosages_TWINGENE!!!
+#-----------------------------------------------
+# Data used: snplist.txt, final_ULSAM.txt,  ulsam.+.qced.imputed.ceu.p2.fam low_imp_f.txt
+# Data created: final_ULSAM_flp.txt
+#-----------------------------------------------
+# OP: R 2.12.1
+#-----------------------------------------------*/
+
+
+imp <- data.frame(read.table("final_ULSAM.txt",header=F,stringsAsFactor=F))
+all <- read.table("Data/snplist.txt", header=F, blank.lines.skip = FALSE)
+low_imp <- read.table("Data/low_imp_f.txt", header=F)
+
+# This SNPs need to be added
+imp <- rbind(imp,c("---","rs2304256",10336652,"A","C",rep(0,length(imp)-5)),c("---","rs13226650",72654941,"A","G",rep(0,length(imp)-5)))
+
+imp <- imp[order(imp$V2),]
+all <- all[order(all$V2),]
+
+setdiff(as.character(imp$V2),as.character(all$V2))
+setdiff(as.character(all$V2),as.character(imp$V2))
+
+
+#Check all imp SNPs are also in all
+check1 <- ifelse(imp$V2%in%all$V2,1,0)
+
+#viceversa
+check2 <- ifelse(all$V2%in%imp$V2,1,0)
+
+#check all and imp have acceptable alleles
+check3 <- ifelse(as.character(all$V3)==as.character(imp$V5) | as.character(all$V3)==as.character(imp$V4),1,0)
+
+
+wh <- NULL
+for (i in seq(6,length(imp),3)){
+	subj <- NULL
+	for (j in 1:nrow(imp)){
+		temp<-t(imp[j,i:(i+2)])	
+		temp2 <- as.numeric(temp[1])*0+as.numeric(temp[2])*1+as.numeric(temp[3])*2
+		subj <- c(subj,temp2)}
+	wh <- rbind(wh,subj)
+	colnames(wh) <- paste(imp[,2],"_",imp[,5],sep="")}
+
+
+wh_d <- data.frame(wh)
+wh_flp <- wh_d
+for (i in 1:length(wh_d)){
+	if (as.character(all$V3[i])!=as.character(imp[i,5])) 
+        	{wh_flp[,i]<- (2-wh_d[,i])
+        	colnames(wh_flp)[i] <- paste(imp[i,2],"_",as.character(all$V3[i]),sep="")}
+        else{wh_flp[,i] <- wh_d[,i]
+	    colnames(wh_flp)[i] <- colnames(wh_d)[i]}
+}
+
+
+# This is to assign the average number of risk alleles in TWINGENE
+for (k in 1:length(wh_flp)){
+	if(strsplit(colnames(wh_flp)[k],"_")[[1]][1] %in% low_imp$V1) {wh_flp[,k] <- low_imp$V2[low_imp$V1==strsplit(colnames(wh_flp)[k],"_")[[1]][1]]}}
+
+
+## Attach .fam
+fam <- read.table("Data/ulsam.+.qced.imputed.ceu.p2.fam", header=F)
+
+## Give subjects ID to wh_flp
+# We use the UL+pat because otherwise when we match with GOSH this can cause some problem.
+
+def <- cbind(paste("UL",fam$V2,sep=""),wh_flp)
+colnames(def)[1] <- "GWAS_ID"
+
+##WRITE FINAL FILE FLIPPED
+write.table(def,"final_ULSAM_flp.txt",quote=F, col.names=T, row.names=F)

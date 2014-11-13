@@ -1,0 +1,77 @@
+#!/bin/sh
+#SBATCH -A b2011036
+#SBATCH -p node
+#SBATCH -n 20
+#SBATCH -t 7-00:00:00
+#SBATCH -J RunSNPtestPIVUSlysoPC
+
+
+## IN UNIX RUN GWAS
+
+phs=(LPC18_1 LPC18_2 MG18_2 PE_cer)
+
+
+
+function runsnptest () {	
+	snptest \
+	-data /proj/b2011036/nobackup/pivus_metabo/PIVUS.$3.$1.gen.gz /proj/b2011036/nobackup/pivus_metabo/table4_pivus.sample \
+	-o /proj/b2011036/nobackup/pivus_metabo/res.$2.$3.$1.res \
+	-frequentist 1 \
+	-method score \
+	-pheno $2 \
+	-missing_code NA \
+	-use_raw_phenotypes \
+	-cov_all \
+	-hwe \
+	-log /proj/b2011036/nobackup/pivus_metabo/res.$2.$3.$1.log
+}
+				
+				
+
+for chr in `seq 1 23` ;do
+
+	chr1=`printf %02d $chr`
+	count=0
+	
+	# Copy each chunk chr file to *.gen 
+	for file in /proj/b2011036/pivus.gwas/pivus.imp.1000gMarch12.b37.update/PIVUS.${chr1}.*.impute.gz ;do
+	
+		count=`expr $count + 1`
+		cp ${file} PIVUS.${chr1}.${count}.gen.gz
+		wait
+		chmod +x PIVUS.${chr1}.${count}.gen.gz
+		
+		# Create pheno loop.
+		for ph in ${phs[@]} ; do
+
+			runsnptest $count $ph $chr1 > /dev/null 2>&1 &
+
+		done
+
+		wait
+	
+		rm PIVUS.${chr1}.${count}.gen.gz
+
+	done
+	
+done
+
+
+# Just headline from SNPtest  which will be useful in the future
+# head -1 res.LP16_0.01.6.res | awk -v chr1=chr '{print chr1  $2  $4  $5  $6  $9  $14  $15  $16  $18  $20  $21  $23  $24}' > ../header_snptest 
+
+for ph in ${phs[@]} ; do
+	touch ../${ph}.final.pivus.txt
+	cat ../header_snptest >> ../${ph}.final.pivus.txt
+	for file in res.${ph}.*.res ;do
+		if [ ${#file} -le $((${#ph}+15)) ]
+		then
+			echo $file
+			ph_l=$(echo ${#ph})
+			ph_ln=$(echo $((ph_l+6)))
+			ph_ln2=$(echo $((ph_l+7)))
+			chr=$(echo ${file} | cut -c `echo ${ph_ln}`-`echo ${ph_ln2}`)
+			sed '1d' ${file} | awk -v chr1=${chr} '{print chr1, $2, $4, $5, $6, $9, $14, $15, $16, $18, $20, $21, $23, $24}' >> ../${ph}.final.pivus.txt
+		fi
+	done
+done

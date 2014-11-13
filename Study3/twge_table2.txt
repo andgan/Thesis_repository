@@ -1,0 +1,74 @@
+#!/bin/sh
+#SBATCH -A b2011036
+#SBATCH -p node
+#SBATCH -n 20
+#SBATCH -t 7-00:00:00
+#SBATCH -J RunSNPtestTWGElysoPC
+
+
+## IN UNIX RUN GWAS
+
+phs=(LPC18_1 LPC18_2 MG18_2 PE_cer)
+
+
+
+
+function runplink () {	
+	plink --noweb \
+	--fam /proj/b2011036/twge.gwas/twge.imp.1000gMarch12.b37/meta/fam/twge.+.qced.fam \
+	--map /proj/b2011036/twge.gwas/twge.imp.1000gMarch12.b37/meta/map/giant_all_chr$3.plink.map \
+	--dosage /proj/b2011036/nobackup/twge_metabo/TWGE.$3.$1.impute.gz Z format=1 \
+	--missing-phenotype -99 \
+	--covar /proj/b2011036/nobackup/twge_metabo/table4_twge.sample \
+	--covar-number 1,2,3,4,5 \
+	--pheno /proj/b2011036/nobackup/twge_metabo/table4_twge.sample \
+	--pheno-name $2 \
+	--out /proj/b2011036/nobackup/twge_metabo/res.$2.$3.$1.res
+	}
+				
+				
+
+for chr in `seq 1 22` ;do
+
+	count=0
+	
+	# Copy each chunk chr file to *.gen 
+	for file in /proj/b2011036/twge.gwas/twge.imp.1000gMarch12.b37/transposed/chr/${chr}/chunk*.dose.gz ;do
+	
+		count=`expr $count + 1`
+		cp ${file} TWGE.${chr}.${count}.impute.gz
+		wait
+		chmod +x TWGE.${chr}.${count}.impute.gz
+		
+		# Create pheno loop.
+		for ph in ${phs[@]} ; do
+
+			runplink $count $ph $chr > /dev/null 2>&1 &
+
+		done
+
+		wait
+	
+		rm TWGE.${chr}.${count}.impute.gz
+
+	done
+	
+done
+
+# Unzipp all
+gunzip *.gz
+
+# Just headline from SNPtest, which will be useful in the future
+ #head -1 res.LP16_0.2.18.res.assoc.dosage  > ../header_plink
+
+for ph in ${phs[@]} ; do
+	touch ../${ph}.final.twge.txt
+	cat ../header_plink>> ../${ph}.final.twge.txt
+	for file in res.${ph}.*.dosage ;do
+		if [ ${#file} -le $((${#ph}+27)) ]
+		then
+			sed '1d' ${file} >> ../${ph}.final.twge.txt
+		fi	
+	done
+done
+

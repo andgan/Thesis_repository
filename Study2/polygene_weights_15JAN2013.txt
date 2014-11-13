@@ -1,0 +1,196 @@
+#!/bin/bash
+
+
+#----------------------------------------------
+# Filename: polygene_weights.txt
+# Study: genoscore
+# Author: Andrea Ganna
+# Date: 15JAN2013
+# Updated:23APR2013 - we try to calculate a polygene score using cardiogramcd4 consortia data
+# Purpose: Calculate polygene score in TWINGENE, create a file with weights to be used in the score definition. Export a file with the polygene profiling to be used in the main analysis.
+# Note: First part run on the server, second part run locally  
+#-----------------------------------------------
+# Data used: asso_final_imp.txt snplist.txt profiles for ulsam gosh and twingene
+# Data created:  weights.txt export_ulsam.txt export_twingene.txt export_gosh.txt
+#-----------------------------------------------
+# OP: R 2.12.1 
+# Libraries: 
+#-----------------------------------------------*/
+
+
+#### PREPARE DATA ####
+
+
+setwd("/home/andgan/genscore/")
+
+#Import weights
+d_i <- read.table("asso_final_imp.txt",header=F)
+d_i_e <- d_i[!is.na(d_i$V8),]
+
+
+#Import effect alleles
+e <- read.table("Data/snplist.txt",header=F,blank.lines.skip = FALSE)
+
+###########################
+#### POLYGENE APPROACH ####
+###########################
+
+
+#Effect (log-OR)
+d_i_e$logor <- log(d_i_e$V6)
+
+
+# Export
+
+#Save the file for the score
+write.table(data.frame(d_i_e$V1, d_i_e$V2, d_i_e$logor),file="/home/andgan/genscore/Results/wtccc.raw",col.names=F,row.names=F,quote=F)
+#Exporting SNPvalue file
+write.table(data.frame(d_i_e$V1, d_i_e$V8),file="/home/andgan/genscore/Results/snpvalue_wtccc.dat",col.names=F,row.names=F,quote=F)
+
+
+### USING IMPUTED DATA
+
+# Run the polygene analysis for TWINGENE
+
+system("plink --bfile /home/andgan/genscore/Data/twge.+.qced --noweb --score /home/andgan/genscore/Results/wtccc.raw --q-score-file /home/andgan/genscore/Results/snpvalue_wtccc.dat --q-score-range /home/andgan/genscore/Results/q_ranges --out /home/andgan/genscore/Results/profiles/wtccc_twingene")
+
+
+# Run the polygene analysis for ULSAM
+
+system("plink --bfile /home/andgan/genscore/Data/ulsam.+.qced --noweb --score /home/andgan/genscore/Results/wtccc.raw --q-score-file /home/andgan/genscore/Results/snpvalue_wtccc.dat --q-score-range /home/andgan/genscore/Results/q_ranges --out /home/andgan/genscore/Results/profiles/wtccc_ulsam")
+
+
+# Run the polygene analysis for GOSH
+
+system("plink --bfile /home/andgan/genscore/Data/twins.+.qced --noweb --score /home/andgan/genscore/Results/wtccc.raw --q-score-file /home/andgan/genscore/Results/snpvalue_wtccc.dat --q-score-range /home/andgan/genscore/Results/q_ranges --out /home/andgan/genscore/Results/profiles/wtccc_gosh")
+
+
+#################
+#### WEIGTHS ####
+#################
+
+#Merge to get the right effect alleles
+de <- merge(d_i_e,e,by.x="V1",by.y="V2")
+
+#Get weights for the right risk allele
+de$logor <- ifelse(as.character(de$V2)==as.character(de$V3.y),abs(log(de$V6)),abs(log(1/de$V6)))
+
+### SOME SNPs in SNPlist CAN NOT BE FOUND IN WEIGHTS ####
+### THEREFORE OR WE FIND A PROXIES OR WE USE THE AVERAGE WEIGHT ####
+# rs1127065 --> No proxies, use average new
+# rs11591147 --> No proxies, use average
+# rs13226650 --> No proxies, use average new
+# rs17465637 --> No proxies, use average
+# rs2247056 --> No proxies, use average new
+# rs2304256 --> No proxies, use average
+# rs247617 --> No proxies, use average new
+# rs268 --> No proxies, use average new
+# rs2844479 --> Proxies are all missing, use average
+# rs3099844 --> No proxies, use average new
+# rs386910 --> No proxies, use average new
+# rs805303 --> No proxies, use average
+
+setdiff(e$V2,de$V1)
+
+
+rs <- c("rs1127065", "rs11591147","rs13226650","rs17465637","rs2247056","rs2304256","rs247617","rs268","rs2844479","rs3099844","rs386910","rs805303")
+logor <- c(mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor),mean(de$logor))
+pval <-c(mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8),mean(de$V8))
+
+exp <- rbind(cbind(as.character(de$V1),de$logor,de$V8),cbind(as.character(rs),logor,pval))
+
+### WRITE THE WEIGHTS TABLE
+write.table(exp[order(exp[,1]),],file="/home/andgan/genscore/weights.txt",col.names=F,row.names=F,quote=F)
+
+
+#######################
+#### SAVE POLYGENE ####
+#######################
+
+
+### TWINGENE ###
+setwd("/home/andgan/genscore/Results/profiles")## Design PACKAGE IS REQUESTlibrary(Design)	## IMPORT PROFILES AND CREATE DATASETtemp_e <- read.table("wtccc_twingene.S1.profile",header=T)ext <- matrix(NA,ncol=18,nrow(temp_e))ext[,1] <- temp_e$SCOREext[,18] <- as.character(temp_e$IID)ext_CNT2 <- mean(temp_e$CNT2)ext <- data.frame(ext)for (i in 2:17){	temp_e <- read.table(paste("wtccc_twingene.S",i,".profile", sep=""),header=T)	ext[,i]<-temp_e$SCORE        ext_CNT2 <- c(ext_CNT2, mean(temp_e$CNT2))}colnames(ext) <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","IID")
+	
+
+write.table(ext,file="/home/andgan/genscore/Results/profiles/export_twingene.txt", col.names=F, row.names=F, quote=F)
+
+### ULSAM ###
+setwd("/home/andgan/genscore/Results/profiles")## Design PACKAGE IS REQUESTlibrary(Design)	## IMPORT PROFILES AND CREATE DATASETtemp_e <- read.table("wtccc_ulsam.S1.profile",header=T)ext <- matrix(NA,ncol=18,nrow(temp_e))ext[,1] <- temp_e$SCOREext[,18] <- as.character(temp_e$IID)ext_CNT2 <- mean(temp_e$CNT2)ext <- data.frame(ext)for (i in 2:17){	temp_e <- read.table(paste("wtccc_ulsam.S",i,".profile", sep=""),header=T)	ext[,i]<-temp_e$SCORE        ext_CNT2 <- c(ext_CNT2, mean(temp_e$CNT2))}colnames(ext) <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","IID")
+	
+
+write.table(ext,file="/home/andgan/genscore/Results/profiles/export_ulsam.txt", col.names=F, row.names=F, quote=F)
+
+
+### GOSH ###
+setwd("/home/andgan/genscore/Results/profiles")## Design PACKAGE IS REQUESTlibrary(Design)	## IMPORT PROFILES AND CREATE DATASETtemp_e <- read.table("wtccc_gosh.S1.profile",header=T)ext <- matrix(NA,ncol=18,nrow(temp_e))ext[,1] <- temp_e$SCOREext[,18] <- as.character(temp_e$IID)ext_CNT2 <- mean(temp_e$CNT2)ext <- data.frame(ext)for (i in 2:17){	temp_e <- read.table(paste("wtccc_gosh.S",i,".profile", sep=""),header=T)	ext[,i]<-temp_e$SCORE        ext_CNT2 <- c(ext_CNT2, mean(temp_e$CNT2))}colnames(ext) <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","IID")
+	
+
+write.table(ext,file="/home/andgan/genscore/Results/profiles/export_gosh.txt", col.names=F, row.names=F, quote=F)
+
+
+#############################
+##### UPDATE 23APR2013 ######
+#############################
+
+### TRY TO CALCULATE THE POLYGENE SCORE USING CARDIOGRAM DATA ###
+
+setwd("/home/andgan/genscore/")
+
+#Import weights
+d_i <- read.table("cardiogramplusc4d_data.txt",header=T)
+
+d_i$logp <- -log10(d_i$InverseVariance_Pvalue)
+
+
+# Export
+
+#Save the file for the score
+write.table(data.frame(d_i$SNP_ID, d_i$reference_allele, d_i$logp),file="/home/andgan/genscore/Results/cardio4cds.raw",col.names=F,row.names=F,quote=F)
+#Exporting SNPvalue file
+write.table(data.frame(d_i$SNP_ID, d_i$InverseVariance_Pvalue),file="/home/andgan/genscore/Results/snpvalue_cardio4cds.dat",col.names=F,row.names=F,quote=F)
+
+
+### USING IMPUTED DATA
+
+# Run the polygene analysis for TWINGENE
+
+system("plink --bfile /home/andgan/genscore/Data/twge.+.qced.b36.imp --noweb --score /home/andgan/genscore/Results/cardio4cds.raw --q-score-file /home/andgan/genscore/Results/snpvalue_cardio4cds.dat --q-score-range /home/andgan/genscore/Results/q_ranges --out /home/andgan/genscore/Results/profiles/cardio4cds_twingene")
+
+
+# Run the polygene analysis for ULSAM
+
+system("plink --bfile /home/andgan/genscore/Data/ulsam.+.qced.imputed.ceu.p2 --noweb --score /home/andgan/genscore/Results/cardio4cds.raw --q-score-file /home/andgan/genscore/Results/snpvalue_cardio4cds.dat --q-score-range /home/andgan/genscore/Results/q_ranges --out /home/andgan/genscore/Results/profiles/cardio4cds_ulsam")
+
+
+# Run the polygene analysis for GOSH
+
+system("plink --bfile /home/andgan/genscore/Data/twins.+.qced.imputed.ceu.p2 --noweb --score /home/andgan/genscore/Results/cardio4cds.raw --q-score-file /home/andgan/genscore/Results/snpvalue_cardio4cds.dat --q-score-range /home/andgan/genscore/Results/q_ranges --out /home/andgan/genscore/Results/profiles/cardio4cds_gosh")
+
+
+#######################
+#### SAVE POLYGENE ####
+#######################
+
+
+### TWINGENE ###
+setwd("/home/andgan/genscore/Results/profiles")## Design PACKAGE IS REQUESTlibrary(Design)	## IMPORT PROFILES AND CREATE DATASETtemp_e <- read.table("wtccc_twingene.S1.profile",header=T)ext <- matrix(NA,ncol=18,nrow(temp_e))ext[,1] <- temp_e$SCOREext[,18] <- as.character(temp_e$IID)ext_CNT2 <- mean(temp_e$CNT2)ext <- data.frame(ext)for (i in 2:17){	temp_e <- read.table(paste("cardio4cds_twingene.S",i,".profile", sep=""),header=T)	ext[,i]<-temp_e$SCORE        ext_CNT2 <- c(ext_CNT2, mean(temp_e$CNT2))}colnames(ext) <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","IID")
+	
+
+write.table(ext,file="/home/andgan/genscore/Results/profiles/export_twingene_cardio4cds.txt", col.names=F, row.names=F, quote=F)
+
+### ULSAM ###
+setwd("/home/andgan/genscore/Results/profiles")## Design PACKAGE IS REQUESTlibrary(Design)	## IMPORT PROFILES AND CREATE DATASETtemp_e <- read.table("wtccc_ulsam.S1.profile",header=T)ext <- matrix(NA,ncol=18,nrow(temp_e))ext[,1] <- temp_e$SCOREext[,18] <- as.character(temp_e$IID)ext_CNT2 <- mean(temp_e$CNT2)ext <- data.frame(ext)for (i in 2:17){	temp_e <- read.table(paste("cardio4cds_ulsam.S",i,".profile", sep=""),header=T)	ext[,i]<-temp_e$SCORE        ext_CNT2 <- c(ext_CNT2, mean(temp_e$CNT2))}colnames(ext) <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","IID")
+	
+
+write.table(ext,file="/home/andgan/genscore/Results/profiles/export_ulsam_cardio4cds.txt", col.names=F, row.names=F, quote=F)
+
+
+### GOSH ###
+setwd("/home/andgan/genscore/Results/profiles")## Design PACKAGE IS REQUESTlibrary(Design)	## IMPORT PROFILES AND CREATE DATASETtemp_e <- read.table("wtccc_gosh.S1.profile",header=T)ext <- matrix(NA,ncol=18,nrow(temp_e))ext[,1] <- temp_e$SCOREext[,18] <- as.character(temp_e$IID)ext_CNT2 <- mean(temp_e$CNT2)ext <- data.frame(ext)for (i in 2:17){	temp_e <- read.table(paste("cardio4cds_gosh.S",i,".profile", sep=""),header=T)	ext[,i]<-temp_e$SCORE        ext_CNT2 <- c(ext_CNT2, mean(temp_e$CNT2))}colnames(ext) <- c("S1","S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S12","S13","S14","S15","S16","S17","IID")
+	
+
+write.table(ext,file="/home/andgan/genscore/Results/profiles/export_gosh_cardio4cds.txt", col.names=F, row.names=F, quote=F)
+
+
+
+

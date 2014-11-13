@@ -1,0 +1,282 @@
+#!/bin/bash
+
+
+#----------------------------------------------
+# Filename: Pruning.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 15JAN2013
+# Updated:
+# Purpose: Pruning SNPs using WTCCC p-values 
+# Note: 
+#-----------------------------------------------
+# Data used: For pruning: ALLCAT.txt, ALLCAT_{trait}.txt STAR_chd_new STAR_chd_new2 weight.txt hapmap-ceu-all
+# Data created: Clumped files _cl_wtccc from WTCCC
+#-----------------------------------------------
+# OP: plink, R 2.12.1
+#-----------------------------------------------*/
+
+
+
+###################################
+###################################
+### PRUNING USING WTCCC P-VALUES### 
+###################################
+###################################
+
+
+##########
+# ALLCAT #
+##########
+
+## PRUNING ALL SNPs (higher p-values are kept)
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT
+
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT.clumped > Data/Subgrp/ALLCAT_cl_wtccc.txt
+
+rm Temp/all.txt Temp/joined.txt Temp/all_.txt Data/Subgrp/ALLCAT.clumped Data/Subgrp/ALLCAT.hh Data/Subgrp/ALLCAT.log
+
+
+##############
+# ALLCAT FHS #
+##############
+
+## Bmi
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_bmi.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_bmi
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_bmi.clumped > Data/Subgrp/ALLCAT_bmi_cl_wtccc.txt
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_bmi.clumped Data/Subgrp/ALLCAT_bmi.hh Data/Subgrp/ALLCAT_bmi.log
+
+
+## CHD
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_chd.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_chd
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_chd.clumped > Data/Subgrp/ALLCAT_chd_cl_wtccc.txt
+
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_chd.clumped Data/Subgrp/ALLCAT_chd.hh Data/Subgrp/ALLCAT_chd.log
+
+
+## FHS
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_fhs.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_fhs
+
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_fhs.clumped > Data/Subgrp/ALLCAT_fhs_cl_wtccc.txt
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_fhs.clumped Data/Subgrp/ALLCAT_fhs.hh Data/Subgrp/ALLCAT_fhs.log
+
+
+
+## HDL
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_hdl.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_hdl
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_hdl.clumped > Data/Subgrp/ALLCAT_hdl_cl_wtccc.txt
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_hdl.clumped Data/Subgrp/ALLCAT_hdl.hh Data/Subgrp/ALLCAT_hdl.log
+
+
+## SBP
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_sbp.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_sbp
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_sbp.clumped > Data/Subgrp/ALLCAT_sbp_cl_wtccc.txt
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_sbp.clumped Data/Subgrp/ALLCAT_sbp.hh Data/Subgrp/ALLCAT_sbp.log
+
+
+## SMOKE
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_smoke.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_smoke
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_smoke.clumped > Data/Subgrp/ALLCAT_smoke_cl_wtccc.txt
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_smoke.clumped Data/Subgrp/ALLCAT_smoke.hh Data/Subgrp/ALLCAT_smoke.log
+
+
+## T2D
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_t2d.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_t2d
+
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_t2d.clumped > Data/Subgrp/ALLCAT_t2d_cl_wtccc.txt
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_t2d.clumped Data/Subgrp/ALLCAT_t2d.hh Data/Subgrp/ALLCAT_t2d.log
+
+
+## TC
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_tc.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_tc
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_tc.clumped > Data/Subgrp/ALLCAT_tc_cl_wtccc.txt
+
+rm Temp/all.txt Temp/all_.txt Temp/joined.txt Data/Subgrp/ALLCAT_tc.clumped Data/Subgrp/ALLCAT_tc.hh Data/Subgrp/ALLCAT_tc.log
+
+
+
+###################
+## PRUNING WTCCC ##
+###################
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump asso_final_imp_V2.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Temp/clump_f
+
+awk '{ print $1 " " $3 }' Temp/clump_f.clumped > asso_final_clumped.txt
+
+## in R
+
+d1 <- read.table("asso_final_clumped.txt", header=T, stringsAsFactors=F)
+d2 <- read.table("asso_final_imp_V2.txt", header=T, stringsAsFactors=F)
+
+d <- d2[d2$SNP %in% d1$SNP,]
+
+write.table(d,"asso_final_clumped.txt", row.names=F, col.names=F, quote=F)
+
+
+
+
+
+
+
+#############################################################################################################
+## This part has been added after review, is the ALLCAT, but without CHD associated SNPs ##
+#############################################################################################################
+
+## Do a part in R
+allcat <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_no_chd.txt", stringsAsFactor=F)
+da <- read.table("/home/andgan/genscore/Data/Subgrp/STAR_chd_with_weight.txt", header=F, blank.lines.skip = FALSE, stringsAsFactor=F)
+
+allcat_no_da <- allcat[!allcat$V2 %in% da$V1,]
+
+write.table(allcat_no_da, file="/home/andgan/genscore/Data/Subgrp/ALLCAT_no_chd2.txt", row.names=F, col.names=F, quote=F)
+
+## PRUNING ALL SNPs (higher p-values are kept)
+
+join -a1 -1 2 -2 1 Data/Subgrp/ALLCAT_no_chd2.txt weights.txt > Temp/joined.txt
+
+awk '{ print $1 " " $6 }' Temp/joined.txt > Temp/all.txt
+echo "SNP" "P" > Temp/header
+cat Temp/header Temp/all.txt > Temp/all_.txt
+
+plink --bfile Data/hapmap-ceu-all \
+--noweb \
+--clump Temp/all_.txt \
+--clump-r2 0.2 --clump-p1 1 --clump-p2 1  \
+--out Data/Subgrp/ALLCAT_no_chd
+
+
+## SAVE ONLY SNPs 
+awk '{ print $1 " " $3 }' Data/Subgrp/ALLCAT_no_chd.clumped > Data/Subgrp/ALLCAT_no_chd_cl_wtccc.txt
+
+rm Temp/all.txt Temp/joined.txt Temp/all_.txt Data/Subgrp/ALLCAT_no_chd.clumped Data/Subgrp/ALLCAT_no_chd.hh Data/Subgrp/ALLCAT_no_chd.log
+
+
+

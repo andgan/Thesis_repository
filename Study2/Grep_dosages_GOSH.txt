@@ -1,0 +1,53 @@
+#!/bin/bash
+
+#----------------------------------------------
+# Filename: grep_dosages_GOSH_rev.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 14JAN2013
+# Updated: 
+# Purpose: Grep the SNPs specified in snplist.txt from the gosh dosages files 
+# Note: 
+#-----------------------------------------------
+# Data used: snplist.txt GOSH_dosages_files
+# Data created: final_GOSH.txt, temporary files
+#-----------------------------------------------
+# OP: 
+#-----------------------------------------------*/
+
+
+for i in `seq 1 22` ; do
+i2=`printf %02d $i`
+
+gunzip -c /projects/CVD/twins.metabochip.data/impute.dosages/ceu.p2.r22/impute1d.twins.+.qced.chr${i2}.ceu.p2.r22.int5M.controls.imp.gz > /projects/CVD/Temp/impute1d.twins.+.qced.chr${i2}.ceu.p2.r22.int5M.controls.imp
+
+
+done
+
+
+snplist=Data/snplist.txt
+
+for chr in `seq 1 22` ; do
+
+ chr1=`printf %02d $chr`
+ grep -w chr${chr} ${snplist} | awk '{print $2}' > Temp/gosh/rs
+
+ dosage=/projects/CVD/Temp/impute1d.twins.+.qced.chr${chr1}.ceu.p2.r22.int5M.controls.imp
+
+ awk '{ print $2 }' ${dosage} > Temp/gosh/rs_d
+
+ grep -n -x -f Temp/gosh/rs Temp/gosh/rs_d | cut -d":" -f1 > Temp/gosh/rows
+
+ awk '{ print $1"p" }' Temp/gosh/rows > Temp/gosh/rowsp
+ tr "\n" ";" < Temp/gosh/rowsp > Temp/gosh/rowsps
+ sed -n "`cat Temp/gosh/rowsps`" ${dosage} > Temp/gosh/chr${chr1}
+ 
+done
+
+cat Temp/gosh/chr* > final_GOSH.txt
+
+
+
+
+
+

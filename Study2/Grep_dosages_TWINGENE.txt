@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#----------------------------------------------
+# Filename: grep_dosages_TWINGENE.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 14JAN2013
+# Updated: 
+# Purpose: Grep the SNPs specified in snplist.txt from the twingene dosages files 
+# Note: 
+#-----------------------------------------------
+# Data used: snplist.txt TWINGENE_dosages_files
+# Data created: final_TWINGENE.txt, temporary files
+#-----------------------------------------------
+# OP: 
+#-----------------------------------------------*/
+
+
+
+snplist=Data/snplist.txt
+
+for chr in `seq 1 22` ; do
+
+ chr1=`printf %02d $chr`
+ grep -w chr${chr} ${snplist} | awk '{print $2}' > Temp/twingene/rs
+
+ 7za x /projects/twingene/110426-final/impute.dosages/ceu.p2.r22/backup-2011-11-28/impute2d.twge.+.qced.b36.chr${chr1}.ceu.p2.r22.int5M.controls.imp.gz -o/projects/CVD/Temp/
+
+ dosage=/projects/CVD/Temp/impute2d.twge.+.qced.b36.chr${chr1}.ceu.p2.r22.int5M.controls.imp
+ 
+ awk '{ print $2 }' ${dosage} > Temp/twingene/rs_d
+
+ grep -n -x -f Temp/twingene/rs Temp/twingene/rs_d | cut -d":" -f1 > Temp/twingene/rows
+
+ awk '{ print $1"p" }' Temp/twingene/rows > Temp/twingene/rowsp
+ tr "\n" ";" < Temp/twingene/rowsp > Temp/twingene/rowsps
+ sed -n "`cat Temp/twingene/rowsps`" ${dosage} > Temp/twingene/chr${chr1}
+ 
+ rm /projects/CVD/Temp/impute2d.twge.+.qced.b36.chr${chr1}.ceu.p2.r22.int5M.controls.imp
+done
+
+cat Temp/twingene/chr* > final_TWINGENE.txt
+
+
+
+
+
+

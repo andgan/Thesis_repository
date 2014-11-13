@@ -1,0 +1,335 @@
+#!/bin/bash
+
+#----------------------------------------------
+# Filename: Merge_flipped_dosages_and_score_FINAL.txt
+# Study: Genscore
+# Author: Andrea Ganna
+# Date: 15JAN2013
+# Updated: 
+# Purpose: Merge all the flipped dosages from GOSH, ULSAM and TWINGENE. I kept only the SNPs
+#          that the studies have in common. It creates also the scores with subgroups SNPs.
+# Note: 
+#-----------------------------------------------
+# Data used: final_GOSH_flp.txt final_ULSAM_flp.txt final_TWINGENE_flp.txt weights.txt STAR_chd_with_weight.tx 
+# Data created: m_gen.txt single_ana_chd.txt single_ana.txt single_ana_info.txt
+#-----------------------------------------------
+# OP: R 2.12.1
+#-----------------------------------------------*/
+
+
+gosh <- read.table("/home/andgan/genscore/final_GOSH_flp.txt", header=T)
+ulsam <- read.table("/home/andgan/genscore/final_ULSAM_flp.txt", header=T)
+twge <- read.table("/home/andgan/genscore/final_TWINGENE_flp.txt", header=T)
+weights <- read.table("/home/andgan/genscore/weights.txt", header=F)
+
+##########################
+##########################
+### MERGE FLIPPED SNPs ###
+##########################
+##########################
+
+##### CHECKS #####
+
+snplist <- read.table("/home/andgan/genscore/Data/snplist.txt", header=F, blank.lines.skip = FALSE)
+
+ch <- NULL
+for (i in 1:length(twge)){
+a <- cbind(strsplit(colnames(twge)[i],"_")[[1]][1])
+ch <- c(ch,a)}
+
+
+setdiff(ch,as.character(snplist$V2))
+setdiff(as.character(snplist$V2),ch)
+
+
+# Check if SNP is in ULSAM but not in GOSH
+setdiff(colnames(ulsam),colnames(gosh))
+setdiff(colnames(ulsam),colnames(twge))
+
+
+
+
+
+#ULSAM + GOSH 
+
+ugosh <- matrix(NA,nrow(gosh)+nrow(ulsam),length(ulsam))
+for (i in 2:length(ulsam)){
+	if (colnames(ulsam)[i]%in%colnames(gosh)) 
+		{ugosh[,i] <- c(ulsam[,i],gosh[,colnames(ulsam)[i]==colnames(gosh)])}}
+
+
+ugosh <- data.frame(ugosh)
+colnames(ugosh) <- colnames(ulsam)
+
+#ULSAM + GOSH (=UGOSH) + TWINGENE
+
+ugoshtw <- matrix(NA,nrow(ugosh)+nrow(twge),length(ugosh))
+for (i in 2:length(ugosh)){
+	if (colnames(ugosh)[i]%in%colnames(twge)) 
+		{ugoshtw[,i] <- c(ugosh[,i],twge[,colnames(ugosh)[i]==colnames(twge)])}}
+
+ugoshtw <- data.frame(ugoshtw)
+colnames(ugoshtw) <- colnames(ugosh)
+
+
+## Add the ID
+
+ugoshtw[,1] <- c(as.character(ulsam[,1]),as.character(gosh[,1]),as.character(twge[,1]))
+
+
+gen <- ugoshtw
+
+
+##############################
+##############################
+### NOW CREATE THE SCORES; ###
+##############################
+##############################
+
+m_gen <- NULL
+
+##########
+# ALLCAT #
+##########
+
+
+allcat <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT.txt")
+
+cl_gen <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% allcat$V2) {cl_gen <- cbind(cl_gen,gen[,i])}
+}
+
+print(length(data.frame(cl_gen)))
+
+m_gen$ALLCAT<- rowSums(cl_gen)
+m_gen$ALLCAT_q <- cut(rowSums(cl_gen),quantile(rowSums(cl_gen),(0:4)/4), include.lowest=TRUE, label=c(1,2,3,4))
+
+
+
+####################################
+# Single SNPs association with CHD #
+####################################
+cl_gen2 <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% allcat$V2) {
+cl_gen2 <- cbind(cl_gen2,gen[,i])
+}}
+
+t <- as.data.frame(cl_gen2)
+colnames(t) <- colnames(gen)[unlist(lapply((strsplit(colnames(gen),"_")),head,1)) %in% allcat$V2]
+
+
+X_gen <- data.frame(gen[,1],t)
+colnames(X_gen)[1] <- "GWAS_ID"
+
+# Export to be use externally
+write.table(X_gen, file="/home/andgan/genscore/Results/export/single_ana.txt", row.names=F, quote=F)
+
+## Info about scores
+bmi <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_bmi_cl_wtccc.txt", header=T)
+chd <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_chd_cl_wtccc.txt", header=T)
+hdl <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_hdl_cl_wtccc.txt", header=T)
+sbp <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_sbp_cl_wtccc.txt", header=T)
+smoke <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_smoke_cl_wtccc.txt", header=T)
+t2d <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_t2d_cl_wtccc.txt", header=T)
+tc <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_tc_cl_wtccc.txt", header=T)
+fhs <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_fhs_cl_wtccc.txt", header=T)
+allcat <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_cl_wtccc.txt", header=T)
+
+
+rt <- as.data.frame(colnames(t))
+colnames(rt) <- c("SNPs")
+
+rt$bmi <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%bmi$SNP,1,0)
+rt$chd <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%chd$SNP,1,0)
+rt$hdl <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%hdl$SNP,1,0)
+rt$sbp <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%sbp$SNP,1,0)
+rt$smoke <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%smoke$SNP,1,0)
+rt$t2d <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%t2d$SNP,1,0)
+rt$tc <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%tc$SNP,1,0)
+rt$fhs <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%fhs$SNP,1,0)
+rt$allcat <- ifelse(sapply(strsplit(as.character(rt$SNPs),"_"),head,1)%in%allcat$SNP,1,0)
+
+
+write.table(rt, file="/home/andgan/genscore/Results/export/single_ana_info.txt", row.names=F, quote=F)
+
+
+## Only CHD annotated
+da <- read.table("/home/andgan/genscore/Data/Subgrp/STAR_chd_with_weight.txt", header=F, blank.lines.skip = FALSE)
+
+cl_gen2 <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% da$V1) {
+cl_gen2 <- cbind(cl_gen2,gen[,i])
+}}
+
+t <- as.data.frame(cl_gen2)
+colnames(t) <- colnames(gen)[unlist(lapply((strsplit(colnames(gen),"_")),head,1)) %in% da$V1]
+
+
+X_gen <- data.frame(gen[,1],t)
+colnames(X_gen)[1] <- "GWAS_ID"
+
+# Export to be use externally
+write.table(X_gen, file="/home/andgan/genscore/Results/export/single_ana_chd.txt", row.names=F, quote=F)
+
+
+
+
+
+###########################
+# ALLCAT_weights_cl_wtccc #
+###########################
+
+
+allcat <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_cl_wtccc.txt")
+
+cl_gen <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% allcat$V2 & strsplit(colnames(gen)[i],"_")[[1]][1] %in% weights$V1) {
+cl_gen <- cbind(cl_gen,gen[,i]*weights$V2[weights$V1==strsplit(colnames(gen)[i],"_")[[1]][1]])
+}}
+
+print(length(data.frame(cl_gen)))
+
+m_gen$ALLCAT_weights_cl_wtccc <- rowSums(cl_gen)
+m_gen$ALLCAT_weights_cl_wtccc_q <- cut(rowSums(cl_gen),quantile(rowSums(cl_gen),(0:4)/4), include.lowest=TRUE, label=c(1,2,3,4))
+
+
+##############
+# ALLCAT FHS #
+##############
+
+
+for (k in c("bmi","bmi_cl_wtccc","chd","chd_cl_wtccc","hdl","hdl_cl_wtccc","sbp","sbp_cl_wtccc","smoke","smoke_cl_wtccc","t2d","t2d_cl_wtccc","tc","tc_cl_wtccc","fhs","fhs_cl_wtccc","cl_wtccc")){
+
+da <- read.table(paste("/home/andgan/genscore/Data/Subgrp/ALLCAT_",k,".txt",sep=""))
+
+cl_gen <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% da$V2) {cl_gen <- cbind(cl_gen,gen[,i])}}
+
+nam <- paste("ALLCAT_",k,sep="")
+nam_q <- paste("ALLCAT_",k,"_q",sep="")
+
+assign(nam,rowSums(cl_gen))
+
+assign(nam_q,cut(rowSums(cl_gen),quantile(rowSums(cl_gen),(0:4)/4), include.lowest=TRUE, label=c(1,2,3,4)))
+
+print(c(k,length(data.frame(cl_gen))))
+
+}
+
+
+m_gen$ALLCAT_bmi <- get("ALLCAT_bmi")
+m_gen$ALLCAT_bmi_q <- get("ALLCAT_bmi_q")
+m_gen$ALLCAT_bmi_cl_wtccc <- get("ALLCAT_bmi_cl_wtccc")
+m_gen$ALLCAT_bmi_cl_wtccc_q <- get("ALLCAT_bmi_cl_wtccc_q")
+
+m_gen$ALLCAT_chd <- get("ALLCAT_chd")
+m_gen$ALLCAT_chd_q <- get("ALLCAT_chd_q")
+m_gen$ALLCAT_chd_cl_wtccc <- get("ALLCAT_chd_cl_wtccc")
+m_gen$ALLCAT_chd_cl_wtccc_q <- get("ALLCAT_chd_cl_wtccc_q")
+
+m_gen$ALLCAT_hdl <- get("ALLCAT_hdl")
+m_gen$ALLCAT_hdl_q <- get("ALLCAT_hdl_q")
+m_gen$ALLCAT_hdl_cl_wtccc <- get("ALLCAT_hdl_cl_wtccc")
+m_gen$ALLCAT_hdl_cl_wtccc_q <- get("ALLCAT_hdl_cl_wtccc_q")
+
+m_gen$ALLCAT_sbp <- get("ALLCAT_sbp")
+m_gen$ALLCAT_sbp_q <- get("ALLCAT_sbp_q")
+m_gen$ALLCAT_sbp_cl_wtccc <- get("ALLCAT_sbp_cl_wtccc")
+m_gen$ALLCAT_sbp_cl_wtccc_q <- get("ALLCAT_sbp_cl_wtccc_q")
+
+m_gen$ALLCAT_smoke <- get("ALLCAT_smoke")
+m_gen$ALLCAT_smoke_q <- get("ALLCAT_smoke_q")
+m_gen$ALLCAT_smoke_cl_wtccc <- get("ALLCAT_smoke_cl_wtccc")
+m_gen$ALLCAT_smoke_cl_wtccc_q <- get("ALLCAT_smoke_cl_wtccc_q")
+
+m_gen$ALLCAT_t2d <- get("ALLCAT_t2d")
+m_gen$ALLCAT_t2d_q <- get("ALLCAT_t2d_q")
+m_gen$ALLCAT_t2d_cl_wtccc <- get("ALLCAT_t2d_cl_wtccc")
+m_gen$ALLCAT_t2d_cl_wtccc_q <- get("ALLCAT_t2d_cl_wtccc_q")
+
+m_gen$ALLCAT_tc <- get("ALLCAT_tc")
+m_gen$ALLCAT_tc_q <- get("ALLCAT_tc_q")
+m_gen$ALLCAT_tc_cl_wtccc <- get("ALLCAT_tc_cl_wtccc")
+m_gen$ALLCAT_tc_cl_wtccc_q <- get("ALLCAT_tc_cl_wtccc_q")
+
+m_gen$ALLCAT_fhs <- get("ALLCAT_fhs")
+m_gen$ALLCAT_fhs_q <- get("ALLCAT_fhs_q")
+m_gen$ALLCAT_fhs_cl_wtccc <- get("ALLCAT_fhs_cl_wtccc")
+m_gen$ALLCAT_fhs_cl_wtccc_q <- get("ALLCAT_fhs_cl_wtccc_q")
+
+m_gen$ALLCAT_cl_wtccc <- get("ALLCAT_cl_wtccc")
+m_gen$ALLCAT_cl_wtccc_q <- get("ALLCAT_cl_wtccc_q")
+
+
+
+###############################
+# ALLCAT_chd_cl_wtccc weights #
+##############################
+
+allcat <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_chd_cl_wtccc.txt")
+
+cl_gen <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% allcat$V2 & strsplit(colnames(gen)[i],"_")[[1]][1] %in% weights$V1) {cl_gen <- cbind(cl_gen,gen[,i]*weights$V2[weights$V1==strsplit(colnames(gen)[i],"_")[[1]][1]])}
+}
+
+print(length(data.frame(cl_gen)))
+
+m_gen$ALLCAT_chd_weights_cl_wtccc <- rowSums(cl_gen)
+m_gen$ALLCAT_chd_weights_cl_wtccc_q <- cut(rowSums(cl_gen),quantile(rowSums(cl_gen),(0:4)/4), include.lowest=TRUE, label=c(1,2,3,4))
+
+
+#######################
+## STAR CHD weighted ##
+#######################
+
+da <- read.table("/home/andgan/genscore/Data/Subgrp/STAR_chd_with_weight.txt", header=F, blank.lines.skip = FALSE)
+
+cl_gen <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% da$V1) {cl_gen <- cbind(cl_gen,gen[,i]*abs(log(da$V2[da$V1==strsplit(colnames(gen)[i],"_")[[1]][1]])))}}
+
+print(length(data.frame(cl_gen)))
+
+m_gen$STAR_chd <- rowSums(cl_gen)
+m_gen$STAR_chd_q <- cut(rowSums(cl_gen),quantile(rowSums(cl_gen),(0:4)/4), include.lowest=TRUE, label=c(1,2,3,4))
+
+
+
+#############################################################################################################
+## This score has been added after review, is the ALLCAT_weights_cl_wtccc, but without CHD associated SNPs ##
+#############################################################################################################
+
+
+
+allcat_no_chd <- read.table("/home/andgan/genscore/Data/Subgrp/ALLCAT_no_chd_cl_wtccc.txt")
+
+cl_gen <- NULL
+for (i in 2:length(gen)){
+if (strsplit(colnames(gen)[i],"_")[[1]][1] %in% allcat_no_chd$V2 & strsplit(colnames(gen)[i],"_")[[1]][1] %in% weights$V1) {
+cl_gen <- cbind(cl_gen,gen[,i]*weights$V2[weights$V1==strsplit(colnames(gen)[i],"_")[[1]][1]])
+}}
+
+print(length(data.frame(cl_gen)))
+
+m_gen$allcat_no_chd_weights_cl_wtccc <- rowSums(cl_gen)
+m_gen$allcat_no_chd_weights_cl_wtccc_q <- cut(rowSums(cl_gen),quantile(rowSums(cl_gen),(0:4)/4), include.lowest=TRUE,label=c(1,2,3,4))
+
+
+
+
+############
+# FINALIZE #
+############
+
+m_gen <- data.frame(gen[,1],m_gen)
+colnames(m_gen)[1] <- "GWAS_ID"
+
+
+write.table(m_gen,file="/home/andgan/genscore/Results/export/m_gen_review.txt", row.names=F, quote=F, sep="\t")
+
